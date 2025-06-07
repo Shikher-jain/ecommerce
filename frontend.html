@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sales Analytics Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9fafb;
+      margin: 0;
+      padding: 1rem;
+      color: #111827;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: #1f2937;
+    }
+    .cards {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+    .card {
+      flex: 1;
+      min-width: 220px;
+      background: #fff;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #2563eb;
+    }
+    canvas {
+      margin-top: 3rem;
+    }
+    table {
+      width: 100%;
+      margin-top: 3rem;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.75rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th {
+      background: #f1f5f9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sales Analytics Dashboard</h1>
+    <div class="cards">
+      <div class="card">
+        <h3>Total Sales</h3>
+        <div class="value" id="total-sales">$0.00</div>
+      </div>
+      <div class="card">
+        <h3>Number of Products</h3>
+        <div class="value" id="num-products">0</div>
+      </div>
+      <div class="card">
+        <h3>Total Transactions</h3>
+        <div class="value" id="num-transactions">0</div>
+      </div>
+    </div>
+
+    <canvas id="salesChart" height="100"></canvas>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Quantity Sold</th>
+          <th>Price ($)</th>
+          <th>Total Sales ($)</th>
+        </tr>
+      </thead>
+      <tbody id="data-table-body"></tbody>
+    </table>
+  </div>
+
+  <script>
+    fetch('http://127.0.0.1:5000/api/sales')
+      .then(res => res.json())
+      .then(data => {
+        let totalSales = 0, totalTransactions = 0;
+
+        const labels = [];
+        const dataPoints = [];
+        const tableBody = document.getElementById('data-table-body');
+
+        data.forEach(item => {
+          totalSales += item.total_sales;
+          totalTransactions += item.quantity;
+          labels.push(item.product_name);
+          dataPoints.push(item.total_sales);
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.product_name}</td>
+            <td>${item.quantity}</td>
+            <td>${item.price.toFixed(2)}</td>
+            <td>${item.total_sales.toFixed(2)}</td>
+          `;
+          tableBody.appendChild(tr);
+        });
+
+        document.getElementById('total-sales').textContent = `$${totalSales.toFixed(2)}`;
+        document.getElementById('num-products').textContent = data.length;
+        document.getElementById('num-transactions').textContent = totalTransactions;
+
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Total Sales ($)',
+              data: dataPoints,
+              backgroundColor: '#2563eb'
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      })
+      .catch(err => console.error("API Error:", err));
+  </script>
+</body>
+</html>
